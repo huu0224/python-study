@@ -1,0 +1,74 @@
+import sys
+sys.setrecursionlimit(10**7)
+
+def find(x, parents):
+    if parents[x] != x:
+        parents[x] = find(parents[x], parents)
+
+    return parents[x]
+
+
+def union(a,b,parents,cnts):
+    a = find(a, parents)
+    b = find(b, parents)
+
+    if a < b:
+        parents[b] = parents[a]
+        cnts[a][0] += cnts[b][0]
+        cnts[a][1] += cnts[b][1]
+    else:
+        parents[a] = parents[b]
+        cnts[b][0] += cnts[a][0]
+        cnts[b][1] += cnts[a][1]
+
+def dfs(cur, graph, parents, visited, cnts):
+
+    if cur % 2 == len(graph[cur]) % 2: # 홀짝 노드
+        cnts[find(cur, parents)][0] += 1
+    else: # 역홀짝 노드
+        cnts[find(cur, parents)][1] += 1
+
+    for next in graph[cur]:
+        if not visited[next]:
+            visited[next] = True
+            union(cur, next, parents, cnts)
+            dfs(next, graph, parents, visited, cnts)
+
+
+def solution(nodes, edges):
+    answer = [0,0]
+    m = max(nodes)
+
+    graph = [[] for _ in range(m+1)]
+    visited = [False for _ in range(m+1)]
+    parents = [i for i in range(m+1)]
+    cnts = [[0,0] for _ in range(m+1)] # 각 그래프별 루트 기준 홀짝 노드/역홀짝 노드 개수
+
+    for edge in edges:
+        u,v = edge[0], edge[1]
+        graph[u].append(v)
+        graph[v].append(u)
+
+    # 각 그래프별 탐색하여 cnts 초기화
+    for node in nodes:
+        if not visited[node]:
+            visited[node] = True
+            dfs(node, graph, parents, visited, cnts)
+
+    # 각 노드별로 루트라 가정하고, 홀짝 트리, 혹은 역홀짝 트리를 만들 수 있는지 검사
+    for node in nodes:
+        root_cnt = cnts[find(node, parents)][0]
+        root_rev_cnt = cnts[find(node, parents)][1]
+        n = root_cnt + root_rev_cnt
+
+        if node % 2 == len(graph[node]) % 2: # 루트가 홀짝 노드
+            # 루트 기준 역홀짝 노드 개수가 n-1개이여함(자식이 되면 역으로 홀짝 노드가 됨)
+            if root_rev_cnt == n-1:
+                answer[0] += 1
+        else: # 루트가 역홀짝 노드
+            # 루트 기준 홀짝 노드 개수가 n-1개이여함(자식이 되면 역으로 역홀짝 노드가 됨)
+            if root_cnt == n-1:
+                answer[1] += 1
+
+    return answer
+

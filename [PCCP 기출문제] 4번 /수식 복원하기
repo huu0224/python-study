@@ -1,0 +1,68 @@
+def to_base_10(num_str, base):
+    """n진수 문자열을 10진수 정수로 변환"""
+    return int(num_str, base)
+
+def from_base_10(n, base):
+    """10진수 정수를 n진수 문자열로 변환"""
+    if n == 0: return "0"
+    res = ""
+    while n > 0:
+        res = str(n % base) + res
+        n //= base
+    return res
+
+def solution(expressions):
+    complete = []
+    incomplete = []
+    min_base = 2
+    
+    # 1. 숫자들을 확인하며 최소 진법 파악 및 수식 분류
+    for expr in expressions:
+        parts = expr.split()
+        # 등장하는 모든 숫자 중 가장 큰 숫자 + 1이 최소 진법
+        for p in [parts[0], parts[2]]:
+            for char in p:
+                min_base = max(min_base, int(char) + 1)
+        if parts[4] != 'X':
+            for char in parts[4]:
+                min_base = max(min_base, int(char) + 1)
+            complete.append(parts)
+        else:
+            incomplete.append(parts)
+            
+    # 2. 가능한 진법 후보군(possible_bases) 찾기
+    possible_bases = []
+    for b in range(min_base, 10):
+        is_valid = True
+        for a, op, b_val, _, res in complete:
+            v1 = to_base_10(a, b)
+            v2 = to_base_10(b_val, b)
+            expected = to_base_10(res, b)
+            if op == '+':
+                if v1 + v2 != expected:
+                    is_valid = False; break
+            else:
+                if v1 - v2 != expected:
+                    is_valid = False; break
+        if is_valid:
+            possible_bases.append(b)
+            
+    # 3. 'X'로 표시된 수식 복원
+    answer = []
+    for a, op, b_val, eq, _ in incomplete:
+        results = set()
+        for b in possible_bases:
+            v1 = to_base_10(a, b)
+            v2 = to_base_10(b_val, b)
+            calc_res = v1 + v2 if op == '+' else v1 - v2
+            results.add(from_base_10(calc_res, b))
+        
+        # 모든 가능한 진법에서 결과가 하나뿐이라면 그 결과 기입
+        if len(results) == 1:
+            final_res = list(results)[0]
+        else:
+            final_res = "?"
+            
+        answer.append(f"{a} {op} {b_val} {eq} {final_res}")
+        
+    return answer

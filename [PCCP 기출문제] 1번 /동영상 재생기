@@ -1,0 +1,40 @@
+def solution(video_len, pos, op_start, op_end, commands):
+    # 1. "mm:ss" 형식을 초(int)로 변환하는 함수
+    def to_seconds(time_str):
+        m, s = map(int, time_str.split(":"))
+        return m * 60 + s
+
+    # 2. 초(int)를 "mm:ss" 형식으로 변환하는 함수
+    def to_string(seconds):
+        m = seconds // 60
+        s = seconds % 60
+        return f"{m:02d}:{s:02d}"
+
+    # 시간 데이터 변환
+    video_limit = to_seconds(video_len)
+    current_pos = to_seconds(pos)
+    opening_start = to_seconds(op_start)
+    opening_end = to_seconds(op_end)
+
+    # 3. 오프닝 구간 체크 함수
+    def skip_opening(curr):
+        if opening_start <= curr <= opening_end:
+            return opening_end
+        return curr
+
+    # 시작 위치가 오프닝 구간인지 먼저 확인
+    current_pos = skip_opening(current_pos)
+
+    # 4. 명령어 처리
+    for cmd in commands:
+        if cmd == "prev":
+            # 10초 전으로 이동, 0초 미만 방지
+            current_pos = max(0, current_pos - 10)
+        elif cmd == "next":
+            # 10초 후로 이동, 비디오 길이 초과 방지
+            current_pos = min(video_limit, current_pos + 10)
+        
+        # 명령어 수행 후 항상 오프닝 체크
+        current_pos = skip_opening(current_pos)
+
+    return to_string(current_pos)

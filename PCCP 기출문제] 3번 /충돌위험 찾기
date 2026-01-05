@@ -1,0 +1,57 @@
+from collections import Counter
+
+def solution(points, routes):
+    # 포인트 번호를 좌표로 쉽게 찾기 위해 딕셔너리로 변환 (1번부터 시작)
+    point_dict = {i + 1: points[i] for i in range(len(points))}
+    
+    # 각 시간(t)별로 로봇들이 위치한 좌표들을 저장할 리스트
+    # history[t] = [(r1, c1), (r2, c2), ...]
+    all_robot_paths = []
+    
+    for route in routes:
+        path = []
+        # 첫 번째 포인트 설정 (0초)
+        curr_r, curr_c = point_dict[route[0]]
+        path.append((curr_r, curr_c))
+        
+        # 다음 목적지들로 순차적 이동
+        for i in range(1, len(route)):
+            target_r, target_c = point_dict[route[i]]
+            
+            # 1. r 좌표 이동 (r이 먼저 변해야 함)
+            while curr_r != target_r:
+                if curr_r < target_r:
+                    curr_r += 1
+                else:
+                    curr_r -= 1
+                path.append((curr_r, curr_c))
+            
+            # 2. c 좌표 이동
+            while curr_c != target_c:
+                if curr_c < target_c:
+                    curr_c += 1
+                else:
+                    curr_c -= 1
+                path.append((curr_r, curr_c))
+        
+        all_robot_paths.append(path)
+    
+    # 최대 이동 시간 확인
+    max_time = max(len(p) for p in all_robot_paths)
+    answer = 0
+    
+    # 매 초(t)마다 로봇들의 위치를 비교
+    for t in range(max_time):
+        positions_at_t = []
+        for path in all_robot_paths:
+            # 해당 로봇이 아직 운송 중(이동 경로 내)이라면 위치 추가
+            if t < len(path):
+                positions_at_t.append(path[t])
+        
+        # 해당 시간대의 좌표별 로봇 개수 세기
+        count = Counter(positions_at_t)
+        for pos in count:
+            if count[pos] >= 2: # 2대 이상 모이면 위험 상황
+                answer += 1
+                
+    return answer

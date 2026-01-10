@@ -1,0 +1,50 @@
+from itertools import combinations, product
+from bisect import bisect_left
+
+def solution(dice):
+    n = len(dice)
+    max_wins = -1
+    answer = []
+
+    # 1. A가 가져갈 주사위 인덱스 조합 구하기 (n/2개 선택)
+    for a_indices in combinations(range(n), n // 2):
+        b_indices = [i for i in range(n) if i not in a_indices]
+
+        # 2. A와 B 각각의 모든 합의 빈도수(점수: 횟수) 계산
+        a_counts = get_sum_counts(a_indices, dice)
+        b_counts = get_sum_counts(b_indices, dice)
+
+        # 3. B의 점수들을 정렬하고 누적 합 계산 (승수 계산 최적화)
+        b_sorted_sums = sorted(b_counts.keys())
+        b_prefix_sums = []
+        temp_sum = 0
+        for s in b_sorted_sums:
+            temp_sum += b_counts[s]
+            b_prefix_sums.append(temp_sum)
+
+        # A가 이기는 총 횟수 계산
+        total_wins = 0
+        for a_sum, a_cnt in a_counts.items():
+            # a_sum보다 작은 b_sum의 개수를 이분 탐색으로 찾음
+            idx = bisect_left(b_sorted_sums, a_sum)
+            if idx > 0:
+                total_wins += a_cnt * b_prefix_sums[idx - 1]
+
+        # 4. 최대 승수 갱신 시 결과 저장 (1-indexed)
+        if total_wins > max_wins:
+            max_wins = total_wins
+            answer = sorted([i + 1 for i in a_indices])
+
+    return answer
+
+def get_sum_counts(indices, dice):
+    """주사위 조합으로 만들 수 있는 모든 합의 빈도를 반환하는 함수"""
+    counts = {0: 1}
+    for idx in indices:
+        new_counts = {}
+        for s, cnt in counts.items():
+            for face in dice[idx]:
+                new_s = s + face
+                new_counts[new_s] = new_counts.get(new_s, 0) + cnt
+        counts = new_counts
+    return counts

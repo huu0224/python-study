@@ -1,0 +1,44 @@
+def solution(coin, cards):
+    n = len(cards)
+    target = n + 1
+    # 초기 카드 n/3장을 세트로 저장
+    my_hand = set(cards[:n//3])
+    # 라운드마다 뽑는 카드를 임시 보관할 세트
+    draw_pool = set()
+    
+    # 카드를 뽑기 시작할 인덱스
+    idx = n // 3
+    round_count = 1
+
+    # 합이 target이 되는 쌍을 찾아 제거하는 헬퍼 함수
+    def can_make_sum(set1, set2):
+        for num in list(set1):
+            if (target - num) in set2:
+                set1.remove(num)
+                set2.remove(target - num)
+                return True
+        return False
+
+    # 라운드 진행
+    while idx < n:
+        # 매 라운드 시작 시 카드 2장 뽑기
+        draw_pool.add(cards[idx])
+        draw_pool.add(cards[idx + 1])
+        idx += 2
+
+        # 우선순위 1: 코인 0개 소모 (내 손 안에서 해결)
+        if can_make_sum(my_hand, my_hand):
+            round_count += 1
+        # 우선순위 2: 코인 1개 소모 (내 손 + 뽑은 카드)
+        elif coin >= 1 and can_make_sum(my_hand, draw_pool):
+            coin -= 1
+            round_count += 1
+        # 우선순위 3: 코인 2개 소모 (뽑은 카드들끼리)
+        elif coin >= 2 and can_make_sum(draw_pool, draw_pool):
+            coin -= 2
+            round_count += 1
+        else:
+            # 더 이상 다음 라운드로 갈 수 있는 방법이 없음
+            break
+            
+    return round_count

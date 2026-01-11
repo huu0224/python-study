@@ -1,0 +1,95 @@
+import sys
+
+# 재귀 깊이 제한 해제
+sys.setrecursionlimit(10**6)
+
+def solution(maze):
+    n = len(maze)
+    m = len(maze[0])
+    
+    # 방향: 상, 하, 좌, 우
+    dy = [-1, 1, 0, 0]
+    dx = [0, 0, -1, 1]
+    
+    r_start, b_start, r_target, b_target = None, None, None, None
+    
+    # 1. 시작 위치와 도착 위치 파악
+    for i in range(n):
+        for j in range(m):
+            if maze[i][j] == 1: r_start = (i, j)
+            elif maze[i][j] == 2: b_start = (i, j)
+            elif maze[i][j] == 3: r_target = (i, j)
+            elif maze[i][j] == 4: b_target = (i, j)
+            
+    # 방문 체크용 (빨강, 파랑 각각 관리)
+    visited_r = [[False] * m for _ in range(n)]
+    visited_b = [[False] * m for _ in range(n)]
+    
+    # 시작점 방문 처리
+    visited_r[r_start[0]][r_start[1]] = True
+    visited_b[b_start[0]][b_start[1]] = True
+    
+    min_turns = float('inf')
+
+    def backtrack(ry, rx, by, bx, turns):
+        nonlocal min_turns
+        
+        # 현재 턴이 이미 기록된 최솟값보다 크면 더 이상 탐색하지 않음
+        if turns >= min_turns:
+            return
+
+        # 두 수레 모두 도착했는지 확인
+        r_arrived = (ry, rx) == r_target
+        b_arrived = (by, bx) == b_target
+        
+        if r_arrived and b_arrived:
+            min_turns = min(min_turns, turns)
+            return
+
+        # 빨간 수레 이동 후보 생성
+        r_moves = []
+        if r_arrived:
+            r_moves.append((ry, rx))
+        else:
+            for i in range(4):
+                nry, nrx = ry + dy[i], rx + dx[i]
+                if 0 <= nry < n and 0 <= nrx < m and not visited_r[nry][nrx] and maze[nry][nrx] != 5:
+                    r_moves.append((nry, nrx))
+        
+        # 파란 수레 이동 후보 생성
+        b_moves = []
+        if b_arrived:
+            b_moves.append((by, bx))
+        else:
+            for i in range(4):
+                nby, nbx = by + dy[i], bx + dx[i]
+                if 0 <= nby < n and 0 <= nbx < m and not visited_b[nby][nbx] and maze[nby][nbx] != 5:
+                    b_moves.append((nby, nbx))
+
+        # 모든 이동 조합 시도
+        for nry, nrx in r_moves:
+            for nby, nbx in b_moves:
+                # 규칙 검사
+                # 1. 두 수레가 같은 위치로 이동 불가
+                if (nry, nrx) == (nby, nbx): continue
+                
+                # 2. 서로의 자리를 바꾸는 이동 불가
+                if (nry, nrx) == (by, bx) and (nby, nbx) == (ry, rx): continue
+                
+                # 방문 처리 및 재귀 호출
+                # 이미 도착지에 있는 수레는 방문 상태를 변경하지 않음
+                r_was_new = not r_arrived
+                b_was_new = not b_arrived
+                
+                if r_was_new: visited_r[nry][nrx] = True
+                if b_was_new: visited_b[nby][nbx] = True
+                
+                backtrack(nry, nrx, nby, nbx, turns + 1)
+                
+                # 백트래킹 (방문 복구)
+                if r_was_new: visited_r[nry][nrx] = False
+                if b_was_new: visited_b[nby][nbx] = False
+
+    backtrack(r_start[0], r_start[1], b_start[0], b_start[1], 0)
+    
+    return min_turns if min_turns != float('inf') else 0
